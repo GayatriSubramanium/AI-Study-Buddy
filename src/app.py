@@ -6,7 +6,16 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Load API key from .env
+api_key = os.getenv("OPENAI_API_KEY")
+
+# Check if API key is loaded correctly
+if not api_key:
+    raise ValueError("❌ OPENAI_API_KEY not found. Please check your .env file.")
+
+# Set the OpenAI API key
+openai.api_key = api_key
 
 st.set_page_config(page_title="AI Study Buddy", page_icon="📚")
 st.title("📚 AI-Powered Study Buddy")
@@ -33,24 +42,30 @@ if manual_text:
 # Summarize Notes
 if st.button("Summarize Notes") and user_input:
     with st.spinner("Generating summary..."):
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": f"Summarize this study material: {user_input}"}]
-        )
-        summary = response['choices'][0]['message']['content']
-        st.markdown("### Summary")
-        st.write(summary)
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": f"Summarize this study material: {user_input}"}]
+            )
+            summary = response['choices'][0]['message']['content']
+            st.markdown("### Summary")
+            st.write(summary)
+        except Exception as e:
+            st.error(f"❌ Failed to generate summary: {e}")
 
 # Generate Quiz Questions
 if st.button("Generate Quiz") and user_input:
     with st.spinner("Creating quiz questions..."):
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": f"Create 5 MCQs based on this material: {user_input}"}]
-        )
-        quiz = response['choices'][0]['message']['content']
-        st.markdown("### Quiz Questions")
-        st.write(quiz)
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": f"Create 5 MCQs based on this material: {user_input}"}]
+            )
+            quiz = response['choices'][0]['message']['content']
+            st.markdown("### Quiz Questions")
+            st.write(quiz)
+        except Exception as e:
+            st.error(f"❌ Failed to generate quiz: {e}")
 
 # Contextual Q&A Section
 st.markdown("---")
@@ -60,16 +75,19 @@ question = st.text_input("Your Question")
 if st.button("Get Answer") and question:
     st.session_state.chat_history.append({"role": "user", "content": question})
     with st.spinner("Answering..."):
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=st.session_state.chat_history
-        )
-        answer = response['choices'][0]['message']['content']
-        st.session_state.chat_history.append({"role": "assistant", "content": answer})
-        st.markdown("### Answer")
-        st.write(answer)
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=st.session_state.chat_history
+            )
+            answer = response['choices'][0]['message']['content']
+            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+            st.markdown("### Answer")
+            st.write(answer)
+        except Exception as e:
+            st.error(f"❌ Failed to get answer: {e}")
 
-# Display chat history (optional for debugging or review)
+# Display chat history
 st.markdown("---")
 with st.expander("View Conversation History"):
     for msg in st.session_state.chat_history:
